@@ -358,7 +358,6 @@ class BaseVoxelMonteCarlo(metaclass = ABCMeta):
 
 
     def _calc_info(self,coment=''):
-        _params = self.model.get_params()
         calc_info = {
             'Date':datetime.datetime.now().isoformat(),
             'coment':coment,
@@ -366,15 +365,12 @@ class BaseVoxelMonteCarlo(metaclass = ABCMeta):
             'calc_dtype':"32 bit",
             'model':{
                 'model_name':self.model.model_name,
-                'model_params':_params,
-                'model_voxel_space':self.model.voxel_space,
-                'model_xy_size':self.model.xy_size,
+                'model_params':self.model.params,
             },
             'w_beam':self.w_beam,
             'beam_angle':self.beam_angle,
             'initial_refrect_mode':self.initial_refrect_by_angle,
             'beam_mode':'TEM00',
-            'fluence_mode':self.fluence_mode,
         }
         return calc_info
 # =============================================================================
@@ -385,7 +381,7 @@ class VoxelModel:
     def __init__(self):
         self.model_name = 'VoxelModel'
         self.dtype_f = np.float32
-        self.dtype = np.int8
+        self.dtype = np.uint8
         self.params = {
             'voxel_space':0.1,
             'n':[1.5,1.4],
@@ -439,7 +435,7 @@ class VoxelModel:
         return X
 
     def _make_voxel_model(self):
-        self.voxel_model = self.add_array(self.voxel_model,1,self.end_point,np.int8)
+        self.voxel_model = self._add_array(self.voxel_model,1,self.end_point,self.dtype)
         print("Shape of voxel_model ->",self.voxel_model.shape)
 
     def getModelSize(self):
@@ -458,7 +454,7 @@ class VMC(BaseVoxelMonteCarlo):
         first_layer_clear = False,
         threadnum = 128,
         ):
-
+        model = VoxelModel()
         super().__init__(
             nPh = nPh, model = model,dtype_f=dtype_f,dtype=dtype,
             w_beam=w_beam,beam_angle = beam_angle,beam_type = beam_type,
@@ -466,29 +462,6 @@ class VMC(BaseVoxelMonteCarlo):
             first_layer_clear=first_layer_clear,
             threadnum = threadnum
         )
-        self.bone_model = False
-
-    def _set_inital_add(self):
-        if self.beam_type == 'TEM00':
-            self.add =  np.zeros((3, self.nPh),dtype = self.dtype)
-        self.add[0] = self._get_center_add(self.model.voxel_model.shape[0])
-        self.add[1] = self._get_center_add(self.model.voxel_model.shape[1])
-        if self.first_layer_clear:
-            self.add[2] = self.model.get_second_layer_addz()
-        else:
-            self.add[2] = 1
-
-        if self.model.model_name==self.namelist[1]:
-            def _get_first_num_z(a,x):
-                if a[x]==(self.model.end_point-2):
-                    return x
-                return _get_first_num_z(a,x+1)
-            aa = self.add[:,0]
-            a = self.model.voxel_model[aa[0],aa[1]]
-            x=0
-            zz = _get_first_num_z(a,x)
-            print("Inital add for z-axis is ",zz)
-            self.add[2] = zz
 
     def build(self,*initial_data, **kwargs):
         if initial_data == () and kwargs == {}:
@@ -546,19 +519,4 @@ class VMC(BaseVoxelMonteCarlo):
                 pad_inches=0.0)
         plt.show()
 
-    def _calc_info(self,coment=''):
-        calc_info = {
-            'Date':datetime.datetime.now().isoformat(),
-            'coment':coment,
-            'number_of_photons':self.nPh,
-            'calc_dtype':"32 bit",
-            'model':{
-                'model_name':self.model.model_name,
-                'model_params':self.model.params,
-            },
-            'w_beam':self.w_beam,
-            'beam_angle':self.beam_angle,
-            'initial_refrect_mode':self.initial_refrect_by_angle,
-            'beam_mode':'TEM00',
-        }
-        return calc_info
+

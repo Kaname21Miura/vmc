@@ -1,13 +1,8 @@
 
 from ._cukernel import vmc_kernel
-from ._classes import VoxelPlateModel
-from ._classes import VoxelTuringModel
-from ._classes import VoxelPlateExModel
+from ._classes import VMC
 
 __all__ = [
 
-'vmc_kernel',
-'VoxelPlateModel',
-'VoxelTuringModel',
-'VoxelPlateExModel'
+'VMC',
 ]
