@@ -468,15 +468,19 @@ class VMC(BaseVoxelMonteCarlo):
             pass
         else:
             self.model.set_params(*initial_data, **kwargs)
-        if self.bone_model:
-            self.model.build(self.bone_model)
-            del self.bone_model
+        try:
+            self.model.build(self.outer_model)
+            del self.outer_model
             gc.collect()
-        else:
+        except:
             print("Prease set a model.")
 
     def set_model(self,u):
-        self.bone_model = u
+        if (u>255).any():
+            print("Set the voxel value to 256 or less")
+        else:
+            self.outer_model = np.array(u).astype(np.uint8)
+        return self
 
     def set_params(self,*initial_data, **kwargs):
         self.model.set_params(*initial_data, **kwargs)
@@ -504,7 +508,7 @@ class VMC(BaseVoxelMonteCarlo):
                 pad_inches=0.0)
         plt.show()
 
-        plt.figure(figsize=(6,5),dpi=100)
+        plt.figure(figsize=(5,5),dpi=100)
         plt.set_cmap(plt.get_cmap('gray'))
         plt.pcolormesh(resol1,resol2,image[int(image.shape[0]/2),:,:].T)
         plt.xlabel('Y [mm]')
@@ -518,5 +522,3 @@ class VMC(BaseVoxelMonteCarlo):
                 transparent=False,
                 pad_inches=0.0)
         plt.show()
-
-
